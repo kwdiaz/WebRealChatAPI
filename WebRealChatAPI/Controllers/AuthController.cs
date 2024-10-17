@@ -1,11 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.IdentityModel.Tokens;
-using System.IdentityModel.Tokens.Jwt;
-using System.Security.Claims;
-using System.Text;
-using WebRealChatAPI.Context;
+using WebRealChatAPI.Services;
 using WebRealChatAPI.Models;
-using Microsoft.Extensions.Configuration;
 
 namespace WebRealChatAPI.Controllers
 {
@@ -13,84 +8,37 @@ namespace WebRealChatAPI.Controllers
     [Route("[controller]")]
     public class AuthController : ControllerBase
     {
-        private readonly ChatDbContext _context;
-        private readonly IConfiguration _configuration;
+        // Reference to the authentication service
+        private readonly IAuthService _authService;
 
-        public AuthController(ChatDbContext context, IConfiguration configuration)
+        // Constructor to inject the authentication service
+        public AuthController(IAuthService authService)
         {
-            _context = context;
-            _configuration = configuration;
+            _authService = authService;
         }
 
+        // Endpoint to handle user registration
         [HttpPost("register")]
-        public IActionResult Register([FromBody] RegisterRequest request)
+        public IActionResult Register([FromBody] RegisterRequestModel request)
         {
-            try
+            var result = _authService.Register(request);
+            if (result.Success)
             {
-                if (_context.Users.Any(u => u.Username == request.Username))
-                {
-                    return BadRequest("El nombre de usuario ya está en uso.");
-                }
-
-                var user = new UserModel
-                {
-                    Username = request.Username,
-                    PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password)
-                };
-
-                _context.Users.Add(user);
-                _context.SaveChanges();
-
-                return Ok("Usuario registrado correctamente.");
+                return Ok(result.Message); // Return success message if registration is successful
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error en el registro: {ex.Message}");
-            }
+            return BadRequest(result.Message); // Return error message if registration fails
         }
 
+        // Endpoint to handle user login
         [HttpPost("login")]
-        public IActionResult Login([FromBody] LoginRequest request)
+        public IActionResult Login([FromBody] LoginRequestModel request)
         {
-            try
+            var result = _authService.Login(request);
+            if (result.Success)
             {
-                var user = _context.Users.SingleOrDefault(u => u.Username == request.Username);
-
-                if (user == null || !BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-                {
-                    return Unauthorized(new { message = "Usuario o contraseña incorrecta" });
-                }
-
-                // Leer la clave secreta desde appsettings.json
-                var key = Encoding.ASCII.GetBytes(_configuration["Jwt:Key"]);
-
-                var tokenHandler = new JwtSecurityTokenHandler();
-                var tokenDescriptor = new SecurityTokenDescriptor
-                {
-                    Subject = new ClaimsIdentity(new[] { new Claim("username", user.Username) }),
-                    Expires = DateTime.UtcNow.AddHours(1),
-                    SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-                };
-                var token = tokenHandler.CreateToken(tokenDescriptor);
-
-                return Ok(new { token = tokenHandler.WriteToken(token) });
+                return Ok(new { token = result.Token }); // Return token if login is successful
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error en el inicio de sesión: {ex.Message}");
-            }
+            return Unauthorized(new { message = result.Message }); // Return error message if login fails
         }
-    }
-
-    public class RegisterRequest
-    {
-        public string Username { get; set; }
-        public string Password { get; set; }
-    }
-
-    public class LoginRequest
-    {
-        public string Username { get; set; }
-        public string Password { get; set; }
     }
 }

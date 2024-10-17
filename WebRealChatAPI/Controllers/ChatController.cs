@@ -1,8 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using WebRealChatAPI.Context;
+using WebRealChatAPI.Services;
 using WebRealChatAPI.Models;
-using Microsoft.EntityFrameworkCore;
-using WebRealChatAPI.Hubs;
 
 namespace WebRealChatAPI.Controllers
 {
@@ -10,73 +8,33 @@ namespace WebRealChatAPI.Controllers
     [ApiController]
     public class ChatController : ControllerBase
     {
-        private readonly ChatDbContext _context;
+        // Reference to the chat service
+        private readonly IChatService _chatService;
 
-        public ChatController(ChatDbContext context)
+        // Constructor to inject the chat service
+        public ChatController(IChatService chatService)
         {
-            _context = context;
+            _chatService = chatService;
         }
 
-        // Obtener el historial de mensajes
+        // Endpoint to get messages between two users
         [HttpGet("messages")]
-        public async Task<IActionResult> GetMessages()
+        public async Task<IActionResult> GetMessages([FromQuery] string currentUser, [FromQuery] string selectedUser)
         {
-            try
+            var result = await _chatService.GetMessagesAsync(currentUser, selectedUser);
+            if (result.Success)
             {
-                // Devolver mensajes ordenados por timestamp
-                var messages = await _context.ChatMessages.OrderBy(m => m.Timestamp).ToListAsync();
-                return Ok(messages);
+                return Ok(result.Messages); // Return messages if retrieval is successful
             }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error al obtener los mensajes: {ex.Message}");
-            }
+            return StatusCode(500, result.ErrorMessage); // Return server error if retrieval fails
         }
 
-        // Enviar un nuevo mensaje
-        [HttpPost("messages")]
-        public async Task<IActionResult> SendMessage([FromBody] MessageRequest request)
-        {
-            if (string.IsNullOrWhiteSpace(request.User) || string.IsNullOrWhiteSpace(request.Message))
-            {
-                return BadRequest("El usuario y el mensaje no pueden estar vacíos.");
-            }
-
-            try
-            {
-                var message = new ChatMessageModel
-                {
-                    User = request.User,
-                    Message = request.Message,
-                    Timestamp = DateTime.UtcNow
-                };
-
-                // Guardar el mensaje en la base de datos
-                _context.ChatMessages.Add(message);
-                await _context.SaveChangesAsync();
-
-                return Ok("Mensaje enviado correctamente.");
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, $"Error al enviar el mensaje: {ex.Message}");
-            }
-        }
-
-        // Obtener usuarios en línea
+        // Endpoint to get list of online users
         [HttpGet("onlineUsers")]
         public IActionResult GetOnlineUsers()
         {
-            // Llamar al método estático GetConnectedUsers de ChatHub
-            var onlineUsers = ChatHub.GetConnectedUsers();
-            return Ok(onlineUsers);
+            var onlineUsers = _chatService.GetOnlineUsers();
+            return Ok(onlineUsers); // Return list of online users
         }
-    }
-
-    // Clase de solicitud para enviar mensajes
-    public class MessageRequest
-    {
-        public string User { get; set; }
-        public string Message { get; set; }
     }
 }

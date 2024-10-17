@@ -6,30 +6,30 @@ using WebRealChatAPI.Context;
 using WebRealChatAPI.Hubs;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using WebRealChatAPI.Middlewares;
+using WebRealChatAPI.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
+// Add services to the container
 builder.Services.AddControllers();
 
-// Configuración de CORS
+// Configure CORS to allow specific origins
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins("http://localhost:3000") // Permitir solo tu aplicación React
+        policy.WithOrigins("http://localhost:3000") // Allow only your React application
               .AllowAnyHeader()
               .AllowAnyMethod()
               .AllowCredentials();
     });
 });
 
-
-// Configuración de Entity Framework Core para SQL Server
+// Configure Entity Framework Core for SQL Server
 builder.Services.AddDbContext<ChatDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Configuración de JWT Authentication
+// Configure JWT Authentication
 builder.Services.AddAuthentication(options =>
 {
     options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -42,16 +42,35 @@ builder.Services.AddAuthentication(options =>
         ValidateIssuer = true,
         ValidateAudience = true,
         ValidateIssuerSigningKey = true,
-        ValidIssuer = builder.Configuration["Jwt:Issuer"], // Leer desde appsettings.json
-        ValidAudience = builder.Configuration["Jwt:Audience"], 
-        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"])) 
+        ValidIssuer = builder.Configuration["Jwt:Issuer"], // Read from appsettings.json
+        ValidAudience = builder.Configuration["Jwt:Audience"],
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(builder.Configuration["Jwt:Key"]))
+    };
+
+    // Enable support for SignalR with WebSockets
+    options.Events = new JwtBearerEvents
+    {
+        OnMessageReceived = context =>
+        {
+            var accessToken = context.Request.Query["access_token"];
+
+            // If the request is for the SignalR Hub, take the token from the query
+            var path = context.HttpContext.Request.Path;
+            if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/chatHub"))
+            {
+                context.Token = accessToken;
+            }
+            return Task.CompletedTask;
+        }
     };
 });
 
-// Agregar SignalR
+// Add SignalR services
 builder.Services.AddSignalR();
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IChatService, ChatService>();
 
-// Configuración de Swagger
+// Configure Swagger for API documentation
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -60,7 +79,7 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Configure the HTTP request pipeline for development
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -69,18 +88,18 @@ if (app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 
-// Configura CORS
+// Configure CORS
 app.UseCors("AllowAll");
 
-// Autenticación y autorización
+// Enable authentication and authorization
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Mapea los controladores
+// Map controllers
 app.MapControllers();
 app.UseMiddleware<ErrorHandlingMiddleware>();
 
-// Mapea el Hub de SignalR
+// Map SignalR Hub
 app.MapHub<ChatHub>("/chatHub");
 
 app.Run();

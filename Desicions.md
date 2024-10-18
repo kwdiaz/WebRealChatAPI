@@ -27,17 +27,8 @@ This document outlines the key design decisions made during the development of t
 - **Rationale for SQL Server**: SQL Server was selected due to its reliability, transactional support, and robust integration with ASP.NET Core. This architecture ensures consistency in data storage, efficient querying, and easy scalability for future requirements.
 
 - **Table Structure**:
-
-  - Users: A dedicated table to securely manage user accounts and authentication data.
-  
-  - ChatMessages: This table stores all chat messages, including sender, recipient, message content, and timestamps, ensuring that the chat history is persistent and retrievable.
-  
-  - Entity Framework: Entity Framework was used to manage data access. This decision was made to take advantage of its code-first approach, which allows rapid schema updates and integration with ASP.NET Core.
-  
-  
-    - **Users**: A dedicated table to securely manage user accounts and authentication data.
-    - **ChatMessages**: This table stores all chat messages, including sender, recipient, message content, and timestamps, ensuring that the chat history is persistent and retrievable.
-  
+  - **Users**: A dedicated table to securely manage user accounts and authentication data.
+  - **ChatMessages**: This table stores all chat messages, including sender, recipient, message content, and timestamps, ensuring that the chat history is persistent and retrievable.
   - **Entity Framework**: Entity Framework was used to manage data access. This decision was made to take advantage of its code-first approach, which allows rapid schema updates and integration with ASP.NET Core.
 
 ## 4. Filtering and Tracking Users

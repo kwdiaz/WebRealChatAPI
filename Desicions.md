@@ -22,19 +22,19 @@ This document outlines the key design decisions made during the development of t
 ## 3. Data Storage
 ### 3.1. Database Architecture
 
--Architecture for Data Layer: We used a layered data architecture to ensure a clear separation between business logic and data access. Entity Framework serves as the intermediary between the application and SQL Server, providing an abstraction that helps in managing complex data operations while simplifying development.
+- **Architecture for Data Layer**: We used a layered data architecture to ensure a clear separation between business logic and data access. Entity Framework serves as the intermediary between the application and SQL Server, providing an abstraction that helps in managing complex data operations while simplifying development.
 
--Rationale for SQL Server: SQL Server was selected due to its reliability, transactional support, and robust integration with ASP.NET Core. This architecture ensures consistency in data storage, efficient querying, and easy scalability for future requirements.
-
-Table Structure:
-
-Users: A dedicated table to securely manage user accounts and authentication data.
-
-ChatMessages: This table stores all chat messages, including sender, recipient, message content, and timestamps, ensuring that the chat history is persistent and retrievable.
-
-Entity Framework: Entity Framework was used to manage data access. This decision was made to take advantage of its code-first approach, which allows rapid schema updates and integration with ASP.NET Core.
+- **Rationale for SQL Server**: SQL Server was selected due to its reliability, transactional support, and robust integration with ASP.NET Core. This architecture ensures consistency in data storage, efficient querying, and easy scalability for future requirements.
 
 - **Table Structure**:
+
+- Users: A dedicated table to securely manage user accounts and authentication data.
+
+- ChatMessages: This table stores all chat messages, including sender, recipient, message content, and timestamps, ensuring that the chat history is persistent and retrievable.
+
+- Entity Framework: Entity Framework was used to manage data access. This decision was made to take advantage of its code-first approach, which allows rapid schema updates and integration with ASP.NET Core.
+
+
   - **Users**: A dedicated table to securely manage user accounts and authentication data.
   - **ChatMessages**: This table stores all chat messages, including sender, recipient, message content, and timestamps, ensuring that the chat history is persistent and retrievable.
 

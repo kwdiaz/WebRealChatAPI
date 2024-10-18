@@ -142,4 +142,10 @@ The project uses SQL Server with the following tables:
 
    - To test the real-time chat functionality, you can open multiple browser windows or tabs.
    - Use the `/Chat/SendMessage` endpoint to send messages between users and verify that messages are received in real-time.
+  
+7. **Testing the deploy Version**:
+
+  - Live Deployment: The chat application has been deployed to Azure and is accessible at the following URL:[Real-Time Chat Application](https://webrealchatapi20241017151223.azurewebsites.net/index.html). This link provides access to the live version of the application, where users can register, log in, and interact in real-time.
+
+User Experience: The deployed application maintains the real-time capabilities enabled by SignalR, ensuring users can experience seamless messaging. The deployment on Azure also allows for testing scalability and reliability under different conditions, demonstrating how the app handles concurrent users and real-time communication effectively.
 
